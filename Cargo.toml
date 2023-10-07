@@ -1,0 +1,10 @@
+[workspace]
+members = ["space", "player", "game"]
+
+[workspace.package]
+version = "0.0.1"
+authors = ["Matthew Cornell <mcornell400708@gmail.com>"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/cosmonaut-game/cosmonaut"
+description = "Cosmonaut is a hyper-realistic sci-fi game taking place deep in space."

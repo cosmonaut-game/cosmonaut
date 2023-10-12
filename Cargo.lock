@@ -444,6 +444,7 @@ checksum = "732faf8ed44847ccc0b910786093ce4354dd5f93949e7c961ebd4a9f943ee369"
 dependencies = [
  "num-integer",
  "num-traits",
+ "rand",
 ]
 
 [[package]]

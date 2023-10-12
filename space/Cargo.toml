@@ -11,7 +11,7 @@ description.workspace = true
 
 [dependencies]
 bevy = { version = "0.11.3", default-features = false }
-bnum = { version = "0.9.0", features = ["numtraits", "nightly"] }
+bnum = { version = "0.9.0", features = ["numtraits", "nightly", "rand"] }
 num-integer = { version = "0.1.45", features = ["i128"] }
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"

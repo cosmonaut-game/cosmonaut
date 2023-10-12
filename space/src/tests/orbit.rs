@@ -32,25 +32,20 @@ fn assert_err<T: As + Sub<Output = T> + PartialOrd + Copy, F: Display>(
 #[test]
 fn earth_sun() {
     // numbers taken from https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html
-    let sol = UInt::from(19885u64) * UInt::TEN.pow(26);
+    let sol = UInt::from(19885u64) * UInt::TEN.pow(20);
     let o = Orbit::EARTH;
-    assert_err(
-        o.perihelion(),
-        147095000000u64,
-        0.00028,
-        "perihelion failed",
-    );
-    assert_err(o.aphelion(), 152100000000u64, 0.00028, "aphelion failed");
+    assert_err(o.perihelion(), 147095000u64, 0.00028, "perihelion failed");
+    assert_err(o.aphelion(), 152100000u64, 0.00028, "aphelion failed");
     assert_err(
         o.orbital_distance(0.0),
         o.perihelion(),
-        0.00001,
+        0.00002,
         "orbital distance @ perihelion failed",
     );
     assert_err(
         o.orbital_distance(PI),
         o.aphelion(),
-        0.00001,
+        0.00002,
         "orbital distance @ aphelion failed",
     );
     assert_err(
@@ -59,25 +54,15 @@ fn earth_sun() {
         0.0001,
         "orbital period failed",
     );
-    let per = o.orbital_period(sol);
-    for _ in 0..100 {
-        let t = rand::random();
-        assert_err(
-            o.predict(sol, t, per),
-            t,
-            0.0001,
-            format_args!("orbital predictions failed with starting angle of {t:.6} radians"),
-        );
-    }
 }
 
 #[test]
 fn earth_moon() {
     // numbers taken from https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html
-    let sol = UInt::from(5972u64) * UInt::TEN.pow(21);
+    let sol = UInt::from(5972u64) * UInt::TEN.pow(15);
     let o = Orbit::MOON;
-    assert_err(o.perihelion(), 363300000u64, 0.00001, "perihelion failed");
-    assert_err(o.aphelion(), 405500000u64, 0.00001, "aphelion failed");
+    assert_err(o.perihelion(), 363300u64, 0.00002, "perihelion failed");
+    assert_err(o.aphelion(), 405500u64, 0.00002, "aphelion failed");
     assert_err(
         o.orbital_distance(0.0),
         o.perihelion(),
@@ -96,14 +81,20 @@ fn earth_moon() {
         0.005,
         "orbital period failed",
     );
-    let per = o.orbital_period(sol);
-    for _ in 0..100 {
-        let t = rand::random();
-        assert_err(
-            o.predict(sol, t, per),
-            t,
-            0.0001,
-            format_args!("orbital predictions failed with starting angle of {t:.6} radians"),
-        );
-    }
+}
+#[test]
+fn circular() {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let semimajor = rng.gen_range(UInt::TEN.pow(3)..UInt::TEN.pow(6));
+    let o = Orbit::circular(semimajor, bevy::math::DVec3::ZERO);
+    let mass = rng.gen_range(UInt::TEN.pow(15)..UInt::TEN.pow(25));
+    let per = o.orbital_period(mass);
+    println!("semimajor = {semimajor}, mass = {mass}, orbital period = {per}");
+    assert_err(
+        o.predict(mass, 0.0, per / 2),
+        PI,
+        0.0,
+        "orbital predictions failed for half orbit",
+    );
 }

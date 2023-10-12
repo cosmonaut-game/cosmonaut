@@ -3,16 +3,7 @@ use bnum::cast::*;
 use std::f64::consts::PI;
 use std::fmt::Display;
 use std::ops::Sub;
-#[allow(dead_code)]
-fn round(val: f64, digits: u8) -> f64 {
-    let exp = 10u32.pow(digits as _) as f64;
-    (val * exp).round() / exp
-}
-#[allow(dead_code)]
-fn trunc(val: u128, digits: u8) -> u128 {
-    let exp = 10u128.pow(digits as _);
-    val / exp * exp
-}
+
 #[inline(always)]
 fn assert_err<T: As + Sub<Output = T> + PartialOrd + Copy, F: Display>(
     calculated: T,

@@ -2,6 +2,8 @@ use bevy::math::DVec3;
 use bnum::cast::As;
 use bnum::types::U256;
 use num_integer::Roots;
+use std::f64::consts::TAU;
+
 pub type UInt = U256;
 pub const PRECISION: UInt = UInt::TEN.pow(6);
 const PREC_F64: f64 = 10u32.pow(6) as _;
@@ -94,6 +96,6 @@ impl Orbit {
             t -= step;
             out += step / d1;
         }
-        out
+        out % TAU
     }
 }

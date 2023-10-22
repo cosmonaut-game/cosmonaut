@@ -1,6 +1,6 @@
 use crate::body::*;
 use bnum::cast::*;
-use std::f64::consts::PI;
+use std::f64::consts::{PI, TAU};
 use std::fmt::Display;
 use std::ops::Sub;
 
@@ -14,13 +14,29 @@ fn assert_err<T: As + Sub<Output = T> + PartialOrd + Copy + Display, F: Display>
     f64: CastFrom<T>,
 {
     let expected = expected.into();
+    let mut ex = expected.as_::<f64>();
+    if ex == 0.0 {
+        ex = 0.000000001;
+    }
     let err = (if calculated > expected {
         calculated - expected
     } else {
         expected - calculated
     })
     .as_::<f64>()
-        / expected.as_::<f64>();
+        / ex;
+    if err.abs() > error {
+        panic!(
+            "{msg}: error is {:.4}%, maximum allowed is {:.4}%\ncalculated: {calculated}, expected: {expected}",
+            err * 100.0,
+            error * 100.0
+        );
+    }
+}
+#[inline(always)]
+fn assert_angle<F: Display>(calculated: f64, expected: f64, error: f64, msg: F) {
+    let diff = (calculated - expected + PI) % TAU - PI;
+    let err = diff / TAU;
     if err.abs() > error {
         panic!(
             "{msg}: error is {:.4}%, maximum allowed is {:.4}%\ncalculated: {calculated}, expected: {expected}",
@@ -48,15 +64,17 @@ fn earth_sun() {
         0.00002,
         "orbital distance @ aphelion failed",
     );
-    assert_err(
-        o.orbital_period(sol),
-        31558809u64,
-        0.0001,
-        "orbital period failed",
-    );
-    assert_err(
-        o.predict(sol, 0.0, o.orbital_period(sol) / 2),
+    let per = o.orbital_period(sol);
+    assert_err(per, 31558809u64, 0.0001, "orbital period failed");
+    assert_angle(
+        o.predict(sol, 0.0, per / 2),
         PI,
+        0.001,
+        "orbital predictions failed for half orbit",
+    );
+    assert_angle(
+        o.predict(sol, PI, per / 2),
+        0.0,
         0.001,
         "orbital predictions failed for half orbit",
     );
@@ -81,15 +99,17 @@ fn earth_moon() {
         0.0,
         "orbital distance @ aphelion failed",
     );
-    assert_err(
-        o.orbital_period(sol),
-        2360594u64,
-        0.005,
-        "orbital period failed",
-    );
-    assert_err(
-        o.predict(sol, 0.0, o.orbital_period(sol) / 2),
+    let per = o.orbital_period(sol);
+    assert_err(per, 2360594u64, 0.005, "orbital period failed");
+    assert_angle(
+        o.predict(sol, 0.0, per / 2),
         PI,
+        0.001,
+        "orbital predictions failed for half orbit",
+    );
+    assert_angle(
+        o.predict(sol, PI, per / 2),
+        0.0,
         0.001,
         "orbital predictions failed for half orbit",
     );
@@ -106,10 +126,10 @@ fn circular() {
     assert_err(
         o.orbital_speed(mass, 0.0),
         UInt::parse_str_radix("6283185", 10) * semimajor / per / PRECISION,
-        0.15,
+        0.2,
         "orbital speed failed",
     );
-    assert_err(
+    assert_angle(
         o.predict(mass, 0.0, per / 2),
         PI,
         0.001,

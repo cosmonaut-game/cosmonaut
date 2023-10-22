@@ -5,7 +5,7 @@ use std::fmt::Display;
 use std::ops::Sub;
 
 #[inline(always)]
-fn assert_err<T: As + Sub<Output = T> + PartialOrd + Copy, F: Display>(
+fn assert_err<T: As + Sub<Output = T> + PartialOrd + Copy + Display, F: Display>(
     calculated: T,
     expected: impl Into<T>,
     error: f64,
@@ -23,7 +23,7 @@ fn assert_err<T: As + Sub<Output = T> + PartialOrd + Copy, F: Display>(
         / expected.as_::<f64>();
     if err.abs() > error {
         panic!(
-            "{msg}: error is {:.4}%, maximum allowed is {:.4}%",
+            "{msg}: error is {:.4}%, maximum allowed is {:.4}%\ncalculated: {calculated}, expected: {expected}",
             err * 100.0,
             error * 100.0
         );
@@ -54,6 +54,12 @@ fn earth_sun() {
         0.0001,
         "orbital period failed",
     );
+    assert_err(
+        o.predict(sol, 0.0, o.orbital_period(sol) / 2),
+        PI,
+        0.001,
+        "orbital predictions failed for half orbit",
+    );
 }
 
 #[test]
@@ -81,6 +87,12 @@ fn earth_moon() {
         0.005,
         "orbital period failed",
     );
+    assert_err(
+        o.predict(sol, 0.0, o.orbital_period(sol) / 2),
+        PI,
+        0.001,
+        "orbital predictions failed for half orbit",
+    );
 }
 #[test]
 fn circular() {
@@ -92,9 +104,15 @@ fn circular() {
     let per = o.orbital_period(mass);
     println!("semimajor = {semimajor}, mass = {mass}, orbital period = {per}");
     assert_err(
+        o.orbital_speed(mass, 0.0),
+        UInt::parse_str_radix("6283185", 10) * semimajor / per / PRECISION,
+        0.15,
+        "orbital speed failed",
+    );
+    assert_err(
         o.predict(mass, 0.0, per / 2),
         PI,
-        0.0,
+        0.001,
         "orbital predictions failed for half orbit",
     );
 }

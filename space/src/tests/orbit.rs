@@ -1,5 +1,6 @@
-use crate::body::*;
+use crate::orbit::*;
 use bnum::cast::*;
+use cosmonaut_common::*;
 use std::f64::consts::{PI, TAU};
 use std::fmt::Display;
 use std::ops::Sub;
@@ -67,13 +68,13 @@ fn earth_sun() {
     let per = o.orbital_period(sol);
     assert_err(per, 31558809u64, 0.0001, "orbital period failed");
     assert_angle(
-        o.predict(sol, 0.0, per / 2),
+        o.predict_from(sol, 0.0, per / 2),
         PI,
         0.001,
         "orbital predictions failed for half orbit",
     );
     assert_angle(
-        o.predict(sol, PI, per / 2),
+        o.predict_from(sol, PI, per / 2),
         0.0,
         0.001,
         "orbital predictions failed for half orbit",
@@ -102,13 +103,13 @@ fn earth_moon() {
     let per = o.orbital_period(sol);
     assert_err(per, 2360594u64, 0.005, "orbital period failed");
     assert_angle(
-        o.predict(sol, 0.0, per / 2),
+        o.predict_from(sol, 0.0, per / 2),
         PI,
         0.001,
         "orbital predictions failed for half orbit",
     );
     assert_angle(
-        o.predict(sol, PI, per / 2),
+        o.predict_from(sol, PI, per / 2),
         0.0,
         0.001,
         "orbital predictions failed for half orbit",
@@ -119,7 +120,7 @@ fn circular() {
     use rand::Rng;
     let mut rng = rand::thread_rng();
     let semimajor = rng.gen_range(UInt::TEN.pow(3)..UInt::TEN.pow(6));
-    let o = Orbit::circular(semimajor, bevy::math::DVec3::ZERO);
+    let o = Orbit::circular(semimajor, bevy::math::DVec3::ZERO, 0.0);
     let mass = rng.gen_range(UInt::TEN.pow(15)..UInt::TEN.pow(25));
     let per = o.orbital_period(mass);
     println!("semimajor = {semimajor}, mass = {mass}, orbital period = {per}");
@@ -130,7 +131,7 @@ fn circular() {
         "orbital speed failed",
     );
     assert_angle(
-        o.predict(mass, 0.0, per / 2),
+        o.predict_from(mass, 0.0, per / 2),
         PI,
         0.001,
         "orbital predictions failed for half orbit",

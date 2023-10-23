@@ -1,19 +1,16 @@
 use bevy::math::DVec3;
-use bnum::cast::As;
-use bnum::types::U256;
+use cosmonaut_common::*;
 use num_integer::Roots;
 use std::f64::consts::TAU;
 
-pub type UInt = U256;
-pub const PRECISION: UInt = UInt::TEN.pow(6);
-const PREC_F64: f64 = 10u32.pow(6) as _;
 const PREC_SQRT: UInt = UInt::TEN.pow(3);
 const GRAV_INT: UInt = UInt::parse_str_radix("66743", 10); // 6.6743015e-14 * PRECISION^3
-const TAU_INT: UInt = UInt::parse_str_radix("6283185", 10);
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Orbit {
     /// Direction of second focus from the star, must be a unit vector or 0
     pub focus: DVec3,
+    /// Starting angle at universe time = 0
+    pub start: f64,
     /// Measure of semimajor axis of orbit, in kilometers
     pub semimajor: UInt,
     /// Eccentricity of orbit
@@ -22,17 +19,20 @@ pub struct Orbit {
 impl Orbit {
     pub const EARTH: Self = Self {
         focus: DVec3::X,
+        start: 0.0,
         semimajor: UInt::parse_str_radix("149598000", 10),
         eccentricity: 0.017,
     };
     pub const MOON: Self = Self {
         focus: DVec3::X,
+        start: 0.0,
         semimajor: UInt::parse_str_radix("384400", 10),
         eccentricity: 0.0549,
     };
-    pub fn circular(semimajor: UInt, focus: DVec3) -> Self {
+    pub fn circular(semimajor: UInt, focus: DVec3, start: f64) -> Self {
         Self {
             focus,
+            start,
             semimajor,
             eccentricity: 0.0,
         }
@@ -55,11 +55,11 @@ impl Orbit {
             * self.semimajor
             / PRECISION
     }
-    /// Orbital period in seconds, mass in kilograms
+    /// Orbital period in seconds, mass in 10^6 kilograms
     pub fn orbital_period(self, mass: UInt) -> UInt {
         TAU_INT * (self.semimajor.pow(3) * PRECISION.pow(3) / (GRAV_INT * mass)).sqrt() / PRECISION
     }
-    /// Speed of the body in km/s, mass of the parent in kilograms, angle in radians
+    /// Speed of the body in km/s, mass of the parent in 10^6 kilograms, angle in radians
     pub fn orbital_speed(self, mass: UInt, theta: f64) -> UInt {
         (GRAV_INT
             * mass
@@ -70,9 +70,8 @@ impl Orbit {
             / PRECISION
     }
     /// Predict the position of an object after a given number of milliseconds.
-    /// Current and resulting angles are measured in radians from perihelion. Mass of the star is given in kilograms.
-    #[allow(unused_variables)]
-    pub fn predict(self, mass: UInt, current: f64, time: UInt) -> f64 {
+    /// Current and resulting angles are measured in radians from perihelion. Mass of the star is given in 10^6 kilograms.
+    pub fn predict_from(self, mass: UInt, current: f64, time: UInt) -> f64 {
         let p = self.orbital_period(mass);
         let a = self.semimajor.as_::<f64>();
         let a2 = a * a;
@@ -97,5 +96,15 @@ impl Orbit {
             out += step / d1;
         }
         out % TAU
+    }
+    /// Predict the output angle of an orbit at a given point in time.
+    /// Can take a previous calculation for better performance, though benefits may be limited because of the modular nature of this problem.
+    pub fn predict(self, mass: UInt, time: UInt, last: Option<(UInt, f64)>) -> f64 {
+        if let Some((t0, a0)) = last {
+            if time > t0 {
+                return self.predict_from(mass, a0, time - t0);
+            }
+        }
+        self.predict_from(mass, self.start, time)
     }
 }
